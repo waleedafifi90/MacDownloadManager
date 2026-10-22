@@ -10,6 +10,7 @@ struct MacDownloadManagerApp: App {
     @State private var capture: BrowserCapture
     @State private var panels: Panels
     @State private var queues: QueueManager
+    @State private var updater: AppUpdater
 
     init() {
         // Only one copy may run: a second one would take over the browser connection.
@@ -41,6 +42,30 @@ struct MacDownloadManagerApp: App {
         let panels = Panels(manager: manager, capture: capture, queues: queues)
         _panels = State(initialValue: panels)
         queues.didFinishQueue = { [panels] queue in QueueFinish.perform(queue, panels: panels) }
+
+        // Updates come from the project's GitHub releases; checked shortly after launch and
+        // then every few hours (at most once a day, see AppUpdater.checkIfDue).
+        let env = ProcessInfo.processInfo.environment
+        let updater = AppUpdater(settings: manager.settings,
+                                 api: env["MDM_DEV_UPDATE_API"].flatMap(URL.init(string:)) ?? AppUpdater.defaultAPI)
+        _updater = State(initialValue: updater)
+        updater.didFindUpdate = { [panels, manager] release in
+            panels.showUpdate(updater)
+            if env["MDM_DEV_AUTO_INSTALL_UPDATE"] != nil {
+                Task { await UpdateFlow.install(release, updater: updater, manager: manager, onManualInstall: {}) }
+            }
+        }
+        if env["MDM_DEV_UPDATE_API"] != nil { Task { await updater.check(userInitiated: true) } }
+        manager.resumeAfterUpdate()
+        if ProcessInfo.processInfo.environment["MDM_SUPPORT_DIR"] == nil {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(10))
+                while true {
+                    await updater.checkIfDue()
+                    try? await Task.sleep(for: .seconds(6 * 3600))
+                }
+            }
+        }
         queues.startQueuesOnLaunch()
         // The schedules are checked every 15 seconds while the app runs.
         Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
@@ -57,7 +82,12 @@ struct MacDownloadManagerApp: App {
                 .environment(queues)
                 .frame(minWidth: 820, minHeight: 420)
         }
-        .commands { AppCommands(manager: manager, ui: ui, queues: queues) }
+        .commands {
+            AppCommands(manager: manager, ui: ui, queues: queues)
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") { checkForUpdates() }
+            }
+        }
 
         Window("Scheduler", id: "scheduler") {
             SchedulerWindow()
@@ -68,14 +98,22 @@ struct MacDownloadManagerApp: App {
 
         // Keeps the app (and its downloads) running when the main window is closed.
         MenuBarExtra {
-            MenuBarMenu(panels: panels).environment(manager)
+            MenuBarMenu(panels: panels, checkForUpdates: checkForUpdates).environment(manager)
         } label: {
             MenuBarLabel().environment(manager)
         }
 
         Settings {
-            OptionsView().environment(manager).environment(capture)
+            OptionsView().environment(manager).environment(capture).environment(updater)
         }
+    }
+}
+
+extension MacDownloadManagerApp {
+    /// "Check for Updates…": shows the Software Update window with the result.
+    func checkForUpdates() {
+        panels.showUpdate(updater)
+        Task { await updater.check(userInitiated: true) }
     }
 }
 

@@ -1,11 +1,11 @@
 #!/bin/zsh
 # Builds a release binary and wraps it in build/MacDownloadManager.app.
-#   VERSION=0.1.0   version shown in Finder and About (default 0.1.0)
+#   VERSION=0.1.2   version shown in Finder and About (default: the VERSION file)
 #   UNIVERSAL=1     one app for both Apple silicon and Intel Macs (for releases)
 set -euo pipefail
 cd "$(dirname "$0")"
 
-version="${VERSION:-0.1.0}"
+version="${VERSION:-$(cat VERSION)}"
 arch_flags=()
 [[ "${UNIVERSAL:-0}" == 1 ]] && arch_flags=(--arch arm64 --arch x86_64)
 

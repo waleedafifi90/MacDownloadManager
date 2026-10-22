@@ -6,6 +6,8 @@ import DownloadsCore
 /// - MDM_DEV_ADD_URL + MDM_DEV_SAVE_DIR: start downloading that URL at launch.
 /// - MDM_DEV_OPEN_SCHEDULER: open the Scheduler window at launch.
 /// - MDM_DEV_OPEN_PROPERTIES: open File Properties for the first download at launch.
+/// - MDM_DEV_UPDATE_API=<url>: check this "latest release" JSON at launch instead of GitHub;
+///   with MDM_DEV_AUTO_INSTALL_UPDATE also install what it finds (see MacDownloadManagerApp).
 /// - MDM_DEV_CYCLE_MAIN=<file>: close the main window, then reopen the app the way macOS
 ///   does, and write what happened (Dock icon, windows) to <file>.
 /// - MDM_DEV_SNAPSHOT_DIR: after MDM_DEV_SNAPSHOT_DELAY seconds (default 4), save a PNG of

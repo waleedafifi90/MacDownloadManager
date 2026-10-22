@@ -13,6 +13,8 @@ let package = Package(
             "CaptureProtocol", .product(name: "DownloadEngine", package: "Engine"),
         ]),
         .executableTarget(name: "MacDownloadManager", dependencies: ["DownloadsCore"]),
+        // Signs release DMGs so the app's updater accepts them (key in the Keychain).
+        .executableTarget(name: "mdm-release", dependencies: ["DownloadsCore"]),
         // Started by Chrome for the extension (Native Messaging).
         .executableTarget(name: "mdm-native-host", dependencies: ["CaptureProtocol"]),
         .testTarget(

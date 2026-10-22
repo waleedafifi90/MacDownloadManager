@@ -25,6 +25,11 @@ Not affiliated with, endorsed by, or containing any code or assets of IDM or Ton
 - Progress windows can be hidden while the download continues; a menu bar icon lists running downloads and brings their windows back ("Start view": normal, minimized, or not shown).
 - Queues and Scheduler: files in order, *N* at the same time, start once or daily on chosen weekdays, stop at a time, retries per file, and when done: open a file, quit, sleep or shut down (with a 30-second countdown and Cancel).
 - Dialogs appear over the browser, also in full screen, without switching Spaces.
+- Closing the window keeps the app running in the menu bar; opening it again brings back the same copy.
+
+**Updates, without a server**
+- The app checks the project's GitHub releases (daily, or **Check for Updates…**), shows the release notes, and installs the new version in place: it pauses running downloads, swaps the app and relaunches, and the downloads continue.
+- An update is installed only if it matches the SHA-256 GitHub publishes for it **and** carries the developer's Ed25519 signature, so a compromised GitHub account alone can't push an update.
 
 **Browser integration** ([`App/BrowserExtension/`](App/BrowserExtension/))
 - A Chrome extension (Manifest V3) that hands matching downloads to the app with the browser's cookies, referrer and user agent, so downloads that need a login work.
@@ -43,7 +48,7 @@ Not affiliated with, endorsed by, or containing any code or assets of IDM or Ton
 
 ## Download
 
-Get **MacDownloadManager-0.1.1.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
+Get **MacDownloadManager-0.1.2.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
 
 1. Open the DMG and drag **MacDownloadManager** to **Applications**.
 2. Open it once. macOS says it can't verify the developer, because the app isn't signed with an Apple Developer ID or notarized (that needs a paid Apple developer account).
@@ -51,7 +56,7 @@ Get **MacDownloadManager-0.1.1.dmg** from the [latest release](https://github.co
 
 Or, in Terminal: `xattr -dr com.apple.quarantine /Applications/MacDownloadManager.app`
 
-The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.1.1.dmg`.
+The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.1.2.dmg`.
 
 ## Requirements
 
@@ -69,7 +74,7 @@ cd MacDownloadManager/App
 open build/MacDownloadManager.app
 ```
 
-`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.1.1` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.1.1.dmg` with its SHA-256.
+`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.1.2` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.1.2.dmg` with its SHA-256.
 
 The download engine also has a command-line tool:
 
@@ -86,6 +91,27 @@ swift run -c release mdm https://example.com/file.zip -o file.zip -n 8
 
 What gets captured (file types, excluded sites, minimum size) is set in **Options ▸ Browsers**. The toolbar button of the extension turns capture on and off.
 
+## Releasing a new version
+
+One-time setup on the maintainer's Mac: create the update signing key. The private key goes into the login Keychain (never into the repository); paste the printed public key into `UpdateSignature.publicKey` in `App/Sources/DownloadsCore/Updates/UpdateRelease.swift`.
+
+```bash
+cd App
+swift run mdm-release keygen
+swift run mdm-release export-private-key   # back this up somewhere safe: without it no update can ship
+```
+
+For each release:
+
+```bash
+echo 0.1.2 > App/VERSION
+App/make-dmg.sh 0.1.2        # universal DMG + .sha256 + .sig (signed with the key)
+git commit -am "Version 0.1.2" && git tag -a v0.1.2 -m "0.1.2" && git push origin main v0.1.2
+gh release create v0.1.2 App/build/MacDownloadManager-0.1.2.dmg* --title "Mac Download Manager 0.1.2" --notes "..."
+```
+
+The DMG's `.sig` file must be attached to the release: installed copies refuse updates without a valid signature. Copies older than 0.1.2 have no updater and need one manual update.
+
 ## Project layout
 
 ```
@@ -97,6 +123,7 @@ App/                         Swift package: the macOS app
   Sources/DownloadsCore/     download list, queues, scheduler, browser capture, yt-dlp (testable, no UI)
   Sources/CaptureProtocol/   messages and Unix socket shared by the app and the host
   Sources/mdm-native-host/   the program Chrome starts for the extension
+  Sources/mdm-release/       signs release DMGs for the updater
   Sources/MacDownloadManager/ SwiftUI windows and panels
   BrowserExtension/chrome/   the Chrome extension
   make-app.sh                builds MacDownloadManager.app

@@ -13,6 +13,7 @@ struct OptionsView: View {
             DownloadsOptions().tabItem { Label("Downloads", systemImage: "arrow.down.circle") }
             BrowserOptions().tabItem { Label("Browsers", systemImage: "globe") }
             VideoOptions().tabItem { Label("Video", systemImage: "film") }
+            UpdateOptions().tabItem { Label("Updates", systemImage: "arrow.triangle.2.circlepath") }
         }
         .frame(width: 560, height: 460)
         .environment(manager)
@@ -96,5 +97,39 @@ private struct DownloadsOptions: View {
             Toggle("Show download complete dialog", isOn: $settings.showCompleteDialog)
         }
         .formStyle(.grouped)
+    }
+}
+
+private struct UpdateOptions: View {
+    @Environment(DownloadManager.self) private var manager
+    @Environment(AppUpdater.self) private var updater
+
+    var body: some View {
+        @Bindable var settings = manager.settings
+        Form {
+            LabeledContent("Version", value: updater.currentVersion?.description ?? "?")
+            Toggle("Check for updates automatically", isOn: $settings.checkForUpdates)
+            LabeledContent("Last checked",
+                           value: settings.lastUpdateCheck?.formatted(date: .abbreviated, time: .shortened) ?? "Never")
+            HStack {
+                Button("Check Now") { Task { await updater.check(userInitiated: true) } }
+                    .disabled(updater.state == .checking)
+                Text(status).foregroundStyle(.secondary)
+            }
+            Text("Updates come from the project's releases on GitHub. Each one is checked against the SHA-256 GitHub publishes and the developer's signature before it is installed.")
+                .font(.callout).foregroundStyle(.secondary)
+        }
+        .formStyle(.grouped)
+    }
+
+    private var status: String {
+        switch updater.state {
+        case .checking: "Checking…"
+        case .upToDate: "Up to date"
+        case .available(let release): "Version \(release.version) is available"
+        case .failed(let message): message
+        case .downloading, .installing: "Updating…"
+        case .idle: ""
+        }
     }
 }

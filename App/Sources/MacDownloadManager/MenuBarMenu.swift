@@ -7,6 +7,7 @@ import SwiftUI
 struct MenuBarMenu: View {
     @Environment(DownloadManager.self) private var manager
     let panels: Panels
+    let checkForUpdates: () -> Void
 
     private var running: [DownloadItem] { manager.items.filter { $0.status == .downloading } }
 
@@ -30,6 +31,7 @@ struct MenuBarMenu: View {
             .disabled(running.isEmpty)
         Divider()
         Button("Open Mac Download Manager") { AppLifecycle.shared.showMainWindow() }
+        Button("Check for Updates…", action: checkForUpdates)
         Button("Quit") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }

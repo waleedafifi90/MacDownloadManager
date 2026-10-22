@@ -48,6 +48,15 @@ public final class AppSettings {
     }
     public var captureMinimumKB: Int { didSet { defaults.set(captureMinimumKB, forKey: "captureMinimumKB") } }
 
+    // Updates.
+    public var checkForUpdates: Bool { didSet { defaults.set(checkForUpdates, forKey: "checkForUpdates") } }
+    public var lastUpdateCheck: Date? { didSet { defaults.set(lastUpdateCheck, forKey: "lastUpdateCheck") } }
+    public var skippedUpdateVersion: String? {
+        didSet { defaults.set(skippedUpdateVersion, forKey: "skippedUpdateVersion") }
+    }
+    /// Downloads paused to install an update, resumed when the new version starts.
+    public var resumeAfterUpdate: [String] { didSet { defaults.set(resumeAfterUpdate, forKey: "resumeAfterUpdate") } }
+
     public var captureRules: CaptureRules {
         CaptureRules(enabled: captureEnabled,
                      extensions: captureExtensions.lowercased().split(whereSeparator: \.isWhitespace).map(String.init),
@@ -71,6 +80,10 @@ public final class AppSettings {
             ?? CaptureRules.defaultExtensions.joined(separator: " ")
         captureExcludedHosts = defaults.string(forKey: "captureExcludedHosts") ?? ""
         captureMinimumKB = defaults.object(forKey: "captureMinimumKB") as? Int ?? 0
+        checkForUpdates = defaults.object(forKey: "checkForUpdates") as? Bool ?? true
+        lastUpdateCheck = defaults.object(forKey: "lastUpdateCheck") as? Date
+        skippedUpdateVersion = defaults.string(forKey: "skippedUpdateVersion")
+        resumeAfterUpdate = defaults.stringArray(forKey: "resumeAfterUpdate") ?? []
     }
 
     /// Like IDM: each category saves into its own subfolder of the default folder

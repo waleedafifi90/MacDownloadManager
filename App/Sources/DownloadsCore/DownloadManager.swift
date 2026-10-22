@@ -95,6 +95,19 @@ public final class DownloadManager {
         items.filter { $0.status == .downloading }.forEach(pause)
     }
 
+    /// Pauses running downloads before the app quits to update, remembering them.
+    public func pauseAllForUpdate() {
+        settings.resumeAfterUpdate = items.filter { $0.status == .downloading }.map(\.id.uuidString)
+        pauseAll()
+    }
+
+    /// After an update: resumes the downloads that were running before it.
+    public func resumeAfterUpdate() {
+        let ids = Set(settings.resumeAfterUpdate)
+        settings.resumeAfterUpdate = []
+        items.filter { ids.contains($0.id.uuidString) }.forEach(resume)
+    }
+
     /// Removes the download from the list and deletes its partial data.
     /// The finished file is only deleted when `deleteFile` is true.
     public func remove(_ item: DownloadItem, deleteFile: Bool = false) {

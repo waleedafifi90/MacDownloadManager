@@ -53,6 +53,13 @@ final class Panels {
         }
     }
 
+    /// "Software Update": the result of a check, and installing an update.
+    func showUpdate(_ updater: AppUpdater) {
+        show(key: "software-update", title: "Software Update", floating: false) { _ in
+            SoftwareUpdateWindow(updater: updater)
+        }
+    }
+
     /// IDM's "File Properties", one window per download.
     func showProperties(_ item: DownloadItem) {
         show(key: "properties-\(item.id)", title: "File Properties", floating: false) { _ in
