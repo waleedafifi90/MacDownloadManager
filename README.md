@@ -41,6 +41,18 @@ Not affiliated with, endorsed by, or containing any code or assets of IDM or Ton
 | ![Download progress](docs/screenshots/download-progress.png) | ![Download File Info for a video](docs/screenshots/video-file-info.png) |
 | ![Scheduler](docs/screenshots/scheduler.png) | ![File Properties](docs/screenshots/file-properties.png) |
 
+## Download
+
+Get **MacDownloadManager-0.1.0.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
+
+1. Open the DMG and drag **MacDownloadManager** to **Applications**.
+2. Open it once. macOS says it can't verify the developer, because the app isn't signed with an Apple Developer ID or notarized (that needs a paid Apple developer account).
+3. Open **System Settings ▸ Privacy & Security**, scroll down and click **Open Anyway** next to "MacDownloadManager was blocked", then confirm.
+
+Or, in Terminal: `xattr -dr com.apple.quarantine /Applications/MacDownloadManager.app`
+
+The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.1.0.dmg`.
+
 ## Requirements
 
 - macOS 15 or later (Apple silicon or Intel)
@@ -57,7 +69,7 @@ cd MacDownloadManager/App
 open build/MacDownloadManager.app
 ```
 
-`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use.
+`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.1.0` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.1.0.dmg` with its SHA-256.
 
 The download engine also has a command-line tool:
 
