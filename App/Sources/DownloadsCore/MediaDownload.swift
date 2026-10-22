@@ -29,7 +29,7 @@ struct MediaDownload: Sendable {
     }
 
     func run(onProgress: @escaping @Sendable (DownloadProgress) -> Void) async throws {
-        guard let ytDlp = tools.ytDlp else { throw ToolError.missing("yt-dlp") }
+        let ytDlp = try await ToolSetup.ytDlp(tools)
         let resolved = try await MediaExtractor(ytDlp: ytDlp).resolve(source.url, formatSpec: source.formatSpec,
                                                                       headers: headers)
         if resolved.isDirect {
@@ -40,7 +40,8 @@ struct MediaDownload: Sendable {
     }
 
     private func downloadDirect(_ media: ResolvedMedia, onProgress: @escaping @Sendable (DownloadProgress) -> Void) async throws {
-        if media.parts.count > 1, tools.ffmpeg == nil { throw ToolError.missing("ffmpeg") }
+        // Separate video and audio need ffmpeg to be joined; fetch it first if it's missing.
+        if media.parts.count > 1 { _ = try await ToolSetup.ffmpeg(tools) }
         try FileManager.default.createDirectory(at: workFolder, withIntermediateDirectories: true)
         let combined = CombinedProgress(parts: media.parts.count, report: onProgress)
         let files = media.parts.indices.map { workFolder.appendingPathComponent("part\($0).\(media.parts[$0].ext)") }

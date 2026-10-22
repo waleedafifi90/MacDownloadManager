@@ -121,7 +121,7 @@ public final class BrowserCapture {
         // The first video asked for downloads yt-dlp (once); the user doesn't have to.
         let ytDlp: URL
         do {
-            ytDlp = try await YtDlpSetup.ensure(tools)
+            ytDlp = try await ToolSetup.ytDlp(tools)
         } catch {
             return CaptureMessage(type: "formats", error: "Could not download yt-dlp (\(error)). Try Options ▸ Video.")
         }

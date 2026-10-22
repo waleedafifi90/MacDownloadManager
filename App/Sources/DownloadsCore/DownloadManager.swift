@@ -214,7 +214,7 @@ public final class DownloadManager {
         case DownloadError.badStatus(let code): return "Server replied \(code)"
         case DownloadError.dataMismatch: return "The file changed on the server"
         case DownloadError.tooManyRetries: return "Connection kept failing"
-        case ToolError.missing(let tool): return "\(tool) is not installed (Options ▸ Video)"
+        case ToolError.missing(let tool): return "\(tool) could not be downloaded. Check the internet connection, or install it in Options ▸ Video."
         case ToolError.failed(let message): return message
         case let error as URLError: return error.localizedDescription
         default: return "\(error)"

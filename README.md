@@ -41,7 +41,7 @@ Not affiliated with, endorsed by, or containing any code or assets of IDM or Ton
 **Video and audio**
 - Uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) to find streams and qualities on YouTube and many other sites, and [ffmpeg](https://ffmpeg.org) to join separate video and audio without re-encoding.
 - Direct streams are downloaded by our engine (several connections, resumable); fragmented HLS/DASH streams are left to yt-dlp.
-- The app installs yt-dlp from its official GitHub releases and checks it against the SHA-256 GitHub publishes.
+- The app downloads both tools by itself: yt-dlp from its official GitHub releases, checked against the SHA-256 GitHub publishes, and a static ffmpeg build from [ffmpeg.martin-riedl.de](https://ffmpeg.martin-riedl.de), checked against its SHA-256 and installed only with its author's Developer ID signature.
 
 | | |
 |---|---|
@@ -50,7 +50,7 @@ Not affiliated with, endorsed by, or containing any code or assets of IDM or Ton
 
 ## Download
 
-Get **MacDownloadManager-0.1.5.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
+Get **MacDownloadManager-0.1.6.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
 
 1. Open the DMG and drag **MacDownloadManager** to **Applications**.
 2. Open it once. macOS says it can't verify the developer, because the app isn't signed with an Apple Developer ID or notarized (that needs a paid Apple developer account).
@@ -58,13 +58,13 @@ Get **MacDownloadManager-0.1.5.dmg** from the [latest release](https://github.co
 
 Or, in Terminal: `xattr -dr com.apple.quarantine /Applications/MacDownloadManager.app`
 
-The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.1.5.dmg`.
+The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.1.6.dmg`.
 
 ## Requirements
 
 - macOS 15 or later (Apple silicon or Intel)
 - Xcode 16 or later (Swift 6)
-- For video sites: yt-dlp (downloaded automatically) and ffmpeg (`brew install ffmpeg`)
+- For video sites: yt-dlp and ffmpeg, both downloaded automatically when first needed
 - For browser capture: Google Chrome or another Chromium browser (Edge, Brave, Chromium, Vivaldi, Arc)
 
 ## Build and run
@@ -76,7 +76,7 @@ cd MacDownloadManager/App
 open build/MacDownloadManager.app
 ```
 
-`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.1.5` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.1.5.dmg` with its SHA-256.
+`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.1.6` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.1.6.dmg` with its SHA-256.
 
 The download engine also has a command-line tool:
 
@@ -95,7 +95,7 @@ The app connects itself to every Chromium browser it finds each time it starts (
 
 The window turns green as soon as the extension talks to the app. You can open it again from **Options (⌘,) ▸ Browsers ▸ Set Up Extension…**. After that, app updates also update the extension: it reloads itself when the app brings a newer version.
 
-yt-dlp, which finds the qualities of YouTube and other videos, is downloaded automatically the first time it's needed (and refreshed weekly).
+yt-dlp (finds the qualities of YouTube and other videos) and ffmpeg (joins video and audio) are downloaded automatically the first time they're needed; yt-dlp is refreshed weekly.
 
 What gets captured (file types, excluded sites, minimum size) is set in **Options ▸ Browsers**. The toolbar button of the extension turns capture on and off.
 

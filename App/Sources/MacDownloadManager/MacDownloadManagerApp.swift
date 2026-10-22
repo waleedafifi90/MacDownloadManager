@@ -39,10 +39,10 @@ struct MacDownloadManagerApp: App {
             print("Browser capture unavailable: \(error)")
         }
         _capture = State(initialValue: capture)
-        // Connect the browsers and fetch yt-dlp now, so neither needs a trip to Options.
+        // Connect the browsers and fetch yt-dlp and ffmpeg now, so neither needs a trip to Options.
         BrowserSetup.runAtLaunch()
         if ProcessInfo.processInfo.environment["MDM_SUPPORT_DIR"] == nil {
-            YtDlpSetup.refreshInBackground(manager.videoTools)
+            ToolSetup.refreshInBackground(manager.videoTools)
         }
         let panels = Panels(manager: manager, capture: capture, queues: queues)
         _panels = State(initialValue: panels)

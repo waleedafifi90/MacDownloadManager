@@ -24,12 +24,33 @@ struct VideoToolsNetworkTests {
     }
 }
 
+/// Installs the signed static ffmpeg; run with MDM_NETWORK_TESTS=1.
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["MDM_NETWORK_TESTS"] == "1"))
+struct FfmpegNetworkTests {
+    @Test func installsAVerifiedFfmpeg() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("mdm-ff-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let tools = VideoTools(toolsDirectory: dir, searchPaths: [])
+        try await tools.installFfmpeg()
+        let ffmpeg = try #require(tools.ffmpeg)
+        #expect(VideoTools.isSigned(ffmpeg, team: VideoTools.ffmpegTeam))
+        let result = try await ProcessRunner.run(ffmpeg, arguments: ["-version"])
+        #expect(result.status == 0)
+    }
+
+    @Test func refusesABinaryFromAnotherSigner() {
+        // Signed by Apple, not by the ffmpeg builder.
+        #expect(!VideoTools.isSigned(URL(fileURLWithPath: "/bin/ls"), team: VideoTools.ffmpegTeam))
+    }
+}
+
 /// Downloads a small Creative Commons video from YouTube; run with MDM_NETWORK_TESTS=1.
 @MainActor @Suite(.enabled(if: ProcessInfo.processInfo.environment["MDM_NETWORK_TESTS"] == "1"))
 struct MediaDownloadNetworkTests {
     @Test func downloadsVideoAndAudioAndJoinsThem() async throws {
         let tools = VideoTools()
-        try #require(tools.ytDlp != nil && tools.ffmpeg != nil)
+        _ = try await ToolSetup.ytDlp(tools)
+        _ = try await ToolSetup.ffmpeg(tools)
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("mdm-media-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: folder) }
         let manager = DownloadManager(storeURL: nil,
@@ -46,17 +67,9 @@ struct MediaDownloadNetworkTests {
         while item.status == .downloading, Date() < deadline { try await Task.sleep(for: .milliseconds(200)) }
         #expect(item.status == .completed, "\(item.status)")
 
-        // One file with both a video and an audio stream.
-        let probe = Process()
-        probe.executableURL = tools.ffmpeg!.deletingLastPathComponent().appendingPathComponent("ffprobe")
-        probe.arguments = ["-v", "error", "-show_entries", "stream=codec_type", "-of", "csv=p=0", item.destination.path]
-        let pipe = Pipe()
-        probe.standardOutput = pipe
-        try probe.run()
-        probe.waitUntilExit()
-        let streams = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-            .split(separator: "\n").map(String.init)
-        #expect(Set(streams) == ["video", "audio"])
+        // One file with both a video and an audio stream (ffmpeg lists them for -i).
+        let probe = try await ProcessRunner.run(tools.ffmpeg!, arguments: ["-hide_banner", "-i", item.destination.path])
+        #expect(probe.stderr.contains("Video:") && probe.stderr.contains("Audio:"))
         #expect(!FileManager.default.fileExists(atPath: folder.appendingPathComponent(".bbb.mp4.parts").path))
     }
 }

@@ -28,7 +28,7 @@ struct VideoOptions: View {
                         .disabled(working)
                     if working { ProgressView().controlSize(.small) }
                 }
-                Text("Finds the videos and their qualities on YouTube and many other sites. Downloaded from github.com/yt-dlp/yt-dlp and checked against its published SHA-256.")
+                Text("Finds the videos and their qualities on YouTube and many other sites. Downloaded automatically from github.com/yt-dlp/yt-dlp, checked against its published SHA-256, and updated weekly.")
                     .font(.callout).foregroundStyle(.secondary)
             }
             Section {
@@ -39,9 +39,13 @@ struct VideoOptions: View {
                         Text("Not installed").foregroundStyle(.orange)
                     }
                 }
-                Text(tools.ffmpeg == nil
-                     ? "Needed to join separate video and audio streams (most qualities above 360p on YouTube). Install it with Homebrew: brew install ffmpeg"
-                     : "Joins separate video and audio streams without re-encoding.")
+                if tools.ffmpeg == nil {
+                    HStack {
+                        Button("Install ffmpeg", action: installFfmpeg).disabled(working)
+                        if working { ProgressView().controlSize(.small) }
+                    }
+                }
+                Text("Joins separate video and audio streams without re-encoding (most qualities above 360p on YouTube). Downloaded automatically from ffmpeg.martin-riedl.de when first needed, checked against its SHA-256 and its Developer ID signature.")
                     .font(.callout).foregroundStyle(.secondary)
             }
             if let message { Text(message).font(.callout) }
@@ -60,6 +64,20 @@ struct VideoOptions: View {
         try? process.run()
         let output = await Task.detached { pipe.fileHandleForReading.readDataToEndOfFile() }.value
         ytDlpVersion = String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func installFfmpeg() {
+        working = true
+        message = nil
+        Task {
+            do {
+                _ = try await ToolSetup.ffmpeg(tools)
+                message = "Installed ffmpeg."
+            } catch {
+                message = "Could not install ffmpeg: \(error)"
+            }
+            working = false
+        }
     }
 
     private func install() {
