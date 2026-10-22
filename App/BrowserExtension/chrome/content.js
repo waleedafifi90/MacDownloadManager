@@ -17,15 +17,15 @@
       .wrap { position: fixed; display: none; flex-direction: column; align-items: flex-end;
               font: 13px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
       .wrap.visible { display: flex; }
-      button.main { display: flex; align-items: center; gap: 6px; padding: 6px 11px; border: 0; border-radius: 7px;
-                    background: rgba(26, 115, 242, 0.94); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
-                    box-shadow: 0 2px 10px rgba(0,0,0,.35); }
-      button.main:hover { background: rgb(18, 98, 214); }
-      .row { display: flex; align-items: center; gap: 4px; }
-      button.close { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; display: flex;
-                     align-items: center; justify-content: center; background: rgba(30, 30, 32, 0.85); color: #ddd;
-                     cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
-      button.close:hover { background: rgb(60, 60, 64); color: #fff; }
+      /* One blue pill: the download button, then the × that hides it, split by a thin line. */
+      .row { display: flex; align-items: stretch; border-radius: 7px; overflow: hidden;
+             background: rgba(26, 115, 242, 0.94); box-shadow: 0 2px 10px rgba(0,0,0,.35); }
+      button.main { display: flex; align-items: center; gap: 6px; padding: 6px 11px; border: 0;
+                    background: transparent; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+      button.close { display: flex; align-items: center; justify-content: center; padding: 0 9px; border: 0;
+                     border-left: 1px solid rgba(255, 255, 255, 0.35); background: transparent; color: #fff;
+                     cursor: pointer; }
+      button.main:hover, button.close:hover { background: rgb(18, 98, 214); }
       .menu { display: none; margin-top: 6px; min-width: 240px; max-width: 340px; max-height: 320px; overflow: auto;
               background: rgba(30, 30, 32, 0.97); color: #eee; border-radius: 9px; padding: 6px;
               box-shadow: 0 6px 24px rgba(0,0,0,.45); }
@@ -46,8 +46,8 @@
           <span class="label">Download this video</span>
         </button>
         <button class="close" type="button" title="Hide for this video" aria-label="Hide">
-          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path stroke="currentColor"
-            stroke-width="1.6" stroke-linecap="round" d="M2 2l6 6M8 2l-6 6"/></svg>
+          <svg width="11" height="11" viewBox="0 0 10 10" aria-hidden="true"><path stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" d="M2 2l6 6M8 2l-6 6"/></svg>
         </button>
       </div>
       <div class="menu"></div>
