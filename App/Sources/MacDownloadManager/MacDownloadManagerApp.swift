@@ -4,6 +4,7 @@ import SwiftUI
 
 @main
 struct MacDownloadManagerApp: App {
+    @NSApplicationDelegateAdaptor private var lifecycle: AppLifecycle
     @State private var manager: DownloadManager
     @State private var ui = UIState()
     @State private var capture: BrowserCapture
@@ -11,6 +12,11 @@ struct MacDownloadManagerApp: App {
     @State private var queues: QueueManager
 
     init() {
+        // Only one copy may run: a second one would take over the browser connection.
+        // (Development runs with their own MDM_SUPPORT_DIR are separate on purpose.)
+        if ProcessInfo.processInfo.environment["MDM_SUPPORT_DIR"] == nil, AppLifecycle.handOffToRunningCopy() {
+            exit(0)
+        }
         // Don't restore last session's windows: a restored "main window closed" state kept
         // the app windowless at launch, and restored progress windows came back empty.
         // Window sizes and positions are still remembered (NSWindow Frame defaults).

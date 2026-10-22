@@ -47,6 +47,7 @@ struct MainWindow: View {
             capture.didReceive = { [panels] pending in panels.showCapture(pending) }
             // Captures that arrived before this window existed.
             for pending in capture.pending { panels.showCapture(pending) }
+            AppLifecycle.shared.openMainWindow = { openWindow(id: "main") }
             DevHooks.run(manager: manager)
             if ProcessInfo.processInfo.environment["MDM_DEV_OPEN_SCHEDULER"] != nil { openWindow(id: "scheduler") }
             if ProcessInfo.processInfo.environment["MDM_DEV_OPEN_PROPERTIES"] != nil, let first = manager.items.first {

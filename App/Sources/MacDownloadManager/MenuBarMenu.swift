@@ -6,7 +6,6 @@ import SwiftUI
 /// windows back, and opening the app.
 struct MenuBarMenu: View {
     @Environment(DownloadManager.self) private var manager
-    @Environment(\.openWindow) private var openWindow
     let panels: Panels
 
     private var running: [DownloadItem] { manager.items.filter { $0.status == .downloading } }
@@ -30,10 +29,7 @@ struct MenuBarMenu: View {
         Button("Pause All") { manager.pauseAll() }
             .disabled(running.isEmpty)
         Divider()
-        Button("Open Mac Download Manager") {
-            openWindow(id: "main")
-            NSApp.activate()
-        }
+        Button("Open Mac Download Manager") { AppLifecycle.shared.showMainWindow() }
         Button("Quit") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }
