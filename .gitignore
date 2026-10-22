@@ -1,0 +1,19 @@
+# Build output
+.build/
+build/
+*.xcodeproj/xcuserdata/
+.swiftpm/
+DerivedData/
+
+# macOS
+.DS_Store
+
+# IDM's own files are Tonec Inc.'s copyrighted work and are never published:
+# the unpacked installer, its decompiled code, its browser extension and its UI text.
+research/idm_files/
+research/decompiled/
+research/ext/
+research/idman_dialogs.txt
+
+# The browser extension's signing key (its public half is in the manifest).
+App/BrowserExtension/keys/extension-key.pem
