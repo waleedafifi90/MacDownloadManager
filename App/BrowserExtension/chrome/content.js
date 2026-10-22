@@ -21,6 +21,11 @@
                     background: rgba(26, 115, 242, 0.94); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
                     box-shadow: 0 2px 10px rgba(0,0,0,.35); }
       button.main:hover { background: rgb(18, 98, 214); }
+      .row { display: flex; align-items: center; gap: 4px; }
+      button.close { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; display: flex;
+                     align-items: center; justify-content: center; background: rgba(30, 30, 32, 0.85); color: #ddd;
+                     cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+      button.close:hover { background: rgb(60, 60, 64); color: #fff; }
       .menu { display: none; margin-top: 6px; min-width: 240px; max-width: 340px; max-height: 320px; overflow: auto;
               background: rgba(30, 30, 32, 0.97); color: #eee; border-radius: 9px; padding: 6px;
               box-shadow: 0 6px 24px rgba(0,0,0,.45); }
@@ -34,22 +39,30 @@
       .error { padding: 8px; color: #ff8a80; }
     </style>
     <div class="wrap">
-      <button class="main" type="button">
-        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor"
-          d="M7 1h2v8.6l3.3-3.3 1.4 1.4L8 13.4 2.3 7.7l1.4-1.4L7 9.6zM2 14h12v2H2z"/></svg>
-        <span class="label">Download this video</span>
-      </button>
+      <div class="row">
+        <button class="main" type="button">
+          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor"
+            d="M7 1h2v8.6l3.3-3.3 1.4 1.4L8 13.4 2.3 7.7l1.4-1.4L7 9.6zM2 14h12v2H2z"/></svg>
+          <span class="label">Download this video</span>
+        </button>
+        <button class="close" type="button" title="Hide for this video" aria-label="Hide">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path stroke="currentColor"
+            stroke-width="1.6" stroke-linecap="round" d="M2 2l6 6M8 2l-6 6"/></svg>
+        </button>
+      </div>
       <div class="menu"></div>
     </div>`;
   const wrap = root.querySelector('.wrap');
   const button = root.querySelector('button.main');
   const label = root.querySelector('.label');
   const menu = root.querySelector('.menu');
+  const closeButton = root.querySelector('button.close');
 
   let target = null;        // the media element the button belongs to
   let hideTimer = null;
   let menuOpen = false;
   const listings = new Map(); // page URL -> Promise of the app's reply
+  const dismissed = new WeakSet(); // players the user closed the button on (until reload)
 
   function attach() {
     const parent = document.fullscreenElement && document.fullscreenElement.tagName !== 'VIDEO'
@@ -80,6 +93,7 @@
   }
 
   function show(el) {
+    if (dismissed.has(el)) return;
     clearTimeout(hideTimer);
     if (target !== el) {
       target = el;
@@ -166,6 +180,15 @@
     event.preventDefault();
     menuOpen ? closeMenu() : openMenu();
   });
+  closeButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    if (target) dismissed.add(target);
+    closeMenu();
+    clearTimeout(hideTimer);
+    wrap.classList.remove('visible');
+    target = null;
+  });
   wrap.addEventListener('mouseenter', () => clearTimeout(hideTimer));
   wrap.addEventListener('mouseleave', scheduleHide);
 
@@ -178,7 +201,7 @@
     requestAnimationFrame(() => {
       pending = false;
       const el = mediaUnder(event.clientX, event.clientY);
-      if (el) show(el);
+      if (el && !dismissed.has(el)) show(el);
       else if (target && !menuOpen) scheduleHide();
     });
   }, { passive: true, capture: true });
