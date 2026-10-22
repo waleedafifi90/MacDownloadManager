@@ -54,6 +54,8 @@ public final class AppSettings {
     public var skippedUpdateVersion: String? {
         didSet { defaults.set(skippedUpdateVersion, forKey: "skippedUpdateVersion") }
     }
+    /// The browser extension setup window was shown once at first launch.
+    public var browserSetupShown: Bool { didSet { defaults.set(browserSetupShown, forKey: "browserSetupShown") } }
     /// Downloads paused to install an update, resumed when the new version starts.
     public var resumeAfterUpdate: [String] { didSet { defaults.set(resumeAfterUpdate, forKey: "resumeAfterUpdate") } }
 
@@ -84,6 +86,7 @@ public final class AppSettings {
         lastUpdateCheck = defaults.object(forKey: "lastUpdateCheck") as? Date
         skippedUpdateVersion = defaults.string(forKey: "skippedUpdateVersion")
         resumeAfterUpdate = defaults.stringArray(forKey: "resumeAfterUpdate") ?? []
+        browserSetupShown = defaults.bool(forKey: "browserSetupShown")
     }
 
     /// Like IDM: each category saves into its own subfolder of the default folder

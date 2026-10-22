@@ -75,6 +75,42 @@ public struct VideoTools: Sendable {
     }
 }
 
+/// Gets yt-dlp without the user having to: installed when it's first needed (or at
+/// launch), and refreshed weekly, since sites like YouTube often break older versions.
+@MainActor
+public enum YtDlpSetup {
+    private static var running: Task<Void, Error>?
+    static let refreshAfter: TimeInterval = 7 * 24 * 3600
+
+    /// yt-dlp, downloading it first if it's missing. Callers at the same time share one download.
+    public static func ensure(_ tools: VideoTools) async throws -> URL {
+        if let url = tools.ytDlp { return url }
+        try await install(tools)
+        guard let url = tools.ytDlp else { throw ToolError.missing("yt-dlp") }
+        return url
+    }
+
+    /// At launch: install if missing, update our own copy when it's a week old. Errors are
+    /// left for later (the first video retries).
+    public static func refreshInBackground(_ tools: VideoTools) {
+        let ours = tools.toolsDirectory.appendingPathComponent("yt-dlp")
+        if tools.ytDlp != nil {
+            guard tools.ytDlp == ours,
+                let modified = try? ours.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
+                Date().timeIntervalSince(modified) > refreshAfter
+            else { return }
+        }
+        Task { try? await install(tools) }
+    }
+
+    private static func install(_ tools: VideoTools) async throws {
+        let task = running ?? Task { _ = try await tools.installYtDlp() }
+        running = task
+        defer { running = nil }
+        try await task.value
+    }
+}
+
 public enum ToolError: Error, Equatable {
     case assetNotFound
     case checksumMismatch

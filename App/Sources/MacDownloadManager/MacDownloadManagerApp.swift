@@ -39,6 +39,11 @@ struct MacDownloadManagerApp: App {
             print("Browser capture unavailable: \(error)")
         }
         _capture = State(initialValue: capture)
+        // Connect the browsers and fetch yt-dlp now, so neither needs a trip to Options.
+        BrowserSetup.runAtLaunch()
+        if ProcessInfo.processInfo.environment["MDM_SUPPORT_DIR"] == nil {
+            YtDlpSetup.refreshInBackground(manager.videoTools)
+        }
         let panels = Panels(manager: manager, capture: capture, queues: queues)
         _panels = State(initialValue: panels)
         queues.didFinishQueue = { [panels] queue in QueueFinish.perform(queue, panels: panels) }
@@ -103,6 +108,12 @@ struct MacDownloadManagerApp: App {
         } label: {
             MenuBarLabel().environment(manager)
         }
+
+        Window("Set Up Browser Extension", id: "browserSetup") {
+            BrowserSetupWindow().environment(capture)
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
 
         Window("About Mac Download Manager", id: "about") {
             AboutWindow()

@@ -98,9 +98,18 @@ import Testing
             return try reply.map { try JSONDecoder().decode(CaptureMessage.self, from: $0) }
         }
 
-        let hello = try await exchange(CaptureMessage(type: "hello"))
+        // The extension folder the app keeps, at a newer version than the running extension.
+        let folder = dir.appendingPathComponent("ChromeExtension")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data(#"{"version": "9.9.9"}"#.utf8).write(to: folder.appendingPathComponent("manifest.json"))
+
+        let hello = try await exchange(CaptureMessage(type: "hello", extensionVersion: "0.2.2"))
         #expect(hello?.type == "rules")
         #expect(hello?.rules?.extensions.contains("zip") == true)
+        #expect(hello?.extensionVersion == "9.9.9")
+        // The app heard about it too (its setup window waits for this).
+        #expect(capture.extensionLastSeen != nil)
+        #expect(capture.extensionVersion == "0.2.2")
 
         let request = CaptureRequest(url: "https://example.com/big.iso", filename: "big.iso", source: "download")
         let result = try await exchange(CaptureMessage(type: "capture", capture: request))
@@ -140,6 +149,51 @@ import Testing
 
         integration.unregister()
         #expect(!integration.isRegistered(chrome, hostPath: host))
+    }
+
+    @Test func autoSetupConnectsOnceAndFollowsTheBundledExtension() throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent("mdm-auto-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: support) }
+        let fm = FileManager.default
+        try fm.createDirectory(at: support.appendingPathComponent("Google/Chrome"), withIntermediateDirectories: true)
+        let bundled = support.appendingPathComponent("Bundle/ChromeExtension")
+        try fm.createDirectory(at: bundled, withIntermediateDirectories: true)
+        func bundle(version: String) throws {
+            try Data(#"{"version": "\#(version)"}"#.utf8).write(to: bundled.appendingPathComponent("manifest.json"))
+        }
+        try bundle(version: "1.0")
+        let integration = BrowserIntegration(applicationSupport: support,
+                                             extensionFolder: support.appendingPathComponent("MDM/ChromeExtension"))
+        let host = URL(fileURLWithPath: "/Applications/MacDownloadManager.app/Contents/MacOS/mdm-native-host")
+
+        let first = try integration.autoSetup(hostPath: host, bundledExtension: bundled)
+        #expect(first == .init(registered: ["Google Chrome"], extensionUpdated: true))
+        #expect(BrowserIntegration.extensionVersion(in: integration.extensionFolder) == "1.0")
+
+        // Nothing to do at the next launch.
+        #expect(try integration.autoSetup(hostPath: host, bundledExtension: bundled) == .init())
+
+        // The app moved, and a new version brings a new extension.
+        try bundle(version: "1.1")
+        let moved = URL(fileURLWithPath: "/Users/me/Applications/MacDownloadManager.app/Contents/MacOS/mdm-native-host")
+        let next = try integration.autoSetup(hostPath: moved, bundledExtension: bundled)
+        #expect(next == .init(registered: ["Google Chrome"], extensionUpdated: true))
+        #expect(integration.isRegistered(BrowserIntegration.browsers[0], hostPath: moved))
+        #expect(BrowserIntegration.extensionVersion(in: integration.extensionFolder) == "1.1")
+    }
+
+    @Test func findsTheExtensionInABrowserProfile() throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent("mdm-prof-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: support) }
+        let profile = support.appendingPathComponent("Google/Chrome/Profile 2")
+        try FileManager.default.createDirectory(at: profile, withIntermediateDirectories: true)
+        let integration = BrowserIntegration(applicationSupport: support)
+        let chrome = BrowserIntegration.browsers[0]
+        #expect(!integration.hasExtension(chrome))
+
+        let prefs = #"{"extensions":{"settings":{"\#(BrowserIntegration.extensionID)":{"path":"/x"}}}}"#
+        try Data(prefs.utf8).write(to: profile.appendingPathComponent("Secure Preferences"))
+        #expect(integration.hasExtension(chrome))
     }
 
     @Test func extensionIDMatchesTheManifestKey() throws {

@@ -50,7 +50,7 @@ Not affiliated with, endorsed by, or containing any code or assets of IDM or Ton
 
 ## Download
 
-Get **MacDownloadManager-0.1.4.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
+Get **MacDownloadManager-0.1.5.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
 
 1. Open the DMG and drag **MacDownloadManager** to **Applications**.
 2. Open it once. macOS says it can't verify the developer, because the app isn't signed with an Apple Developer ID or notarized (that needs a paid Apple developer account).
@@ -58,13 +58,13 @@ Get **MacDownloadManager-0.1.4.dmg** from the [latest release](https://github.co
 
 Or, in Terminal: `xattr -dr com.apple.quarantine /Applications/MacDownloadManager.app`
 
-The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.1.4.dmg`.
+The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.1.5.dmg`.
 
 ## Requirements
 
 - macOS 15 or later (Apple silicon or Intel)
 - Xcode 16 or later (Swift 6)
-- For video sites: yt-dlp (installed from **Options ▸ Video**) and ffmpeg (`brew install ffmpeg`)
+- For video sites: yt-dlp (downloaded automatically) and ffmpeg (`brew install ffmpeg`)
 - For browser capture: Google Chrome or another Chromium browser (Edge, Brave, Chromium, Vivaldi, Arc)
 
 ## Build and run
@@ -76,7 +76,7 @@ cd MacDownloadManager/App
 open build/MacDownloadManager.app
 ```
 
-`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.1.4` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.1.4.dmg` with its SHA-256.
+`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.1.5` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.1.5.dmg` with its SHA-256.
 
 The download engine also has a command-line tool:
 
@@ -87,9 +87,15 @@ swift run -c release mdm https://example.com/file.zip -o file.zip -n 8
 
 ## Connect Chrome
 
-1. In the app, open **Options (⌘,) ▸ Browsers** and click **Connect Browsers**. This registers the native messaging host with every Chromium browser found and copies the extension to `~/Library/Application Support/MacDownloadManager/ChromeExtension`.
-2. In Chrome, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick that folder (**Show Extension Folder** opens it).
-3. Download a `.zip` or `.dmg`, or hover a video: the app takes it from there.
+The app connects itself to every Chromium browser it finds each time it starts (Chrome, Edge, Brave, Chromium, Vivaldi, Arc) and keeps the extension in `~/Library/Application Support/MacDownloadManager/ChromeExtension`. The first time, a **Set Up Browser Extension** window shows the one part only you can do:
+
+1. Click **Open Google Chrome Extensions**.
+2. Turn on **Developer mode** (top right).
+3. Drag the extension folder from the window onto the page, or click **Load unpacked** and choose it.
+
+The window turns green as soon as the extension talks to the app. You can open it again from **Options (⌘,) ▸ Browsers ▸ Set Up Extension…**. After that, app updates also update the extension: it reloads itself when the app brings a newer version.
+
+yt-dlp, which finds the qualities of YouTube and other videos, is downloaded automatically the first time it's needed (and refreshed weekly).
 
 What gets captured (file types, excluded sites, minimum size) is set in **Options ▸ Browsers**. The toolbar button of the extension turns capture on and off.
 
@@ -109,7 +115,7 @@ For each release:
 echo 0.1.2 > App/VERSION
 App/make-dmg.sh 0.1.2        # universal DMG + .sha256 + .sig (signed with the key)
 git commit -am "Version 0.1.2" && git tag -a v0.1.2 -m "0.1.2" && git push origin main v0.1.2
-gh release create v0.1.2 App/build/MacDownloadManager-0.1.4.dmg* --title "Mac Download Manager 0.1.2" --notes "..."
+gh release create v0.1.2 App/build/MacDownloadManager-0.1.2.dmg* --title "Mac Download Manager 0.1.2" --notes "..."
 ```
 
 The DMG's `.sig` file must be attached to the release: installed copies refuse updates without a valid signature. Copies older than 0.1.2 have no updater and need one manual update.
@@ -153,7 +159,7 @@ node --test App/BrowserExtension/tests/rules.test.mjs App/BrowserExtension/tests
 
 The engine and app tests run against a local HTTP server that can drop or stall connections. Tests that need the internet (installing yt-dlp, downloading a Creative Commons video from YouTube) run only with `MDM_NETWORK_TESTS=1`.
 
-Development switches (environment variables, see `DevHooks.swift`): `MDM_DEV_STORE` and `MDM_SUPPORT_DIR` keep test runs out of your real download list, and `MDM_DEV_SNAPSHOT_DIR` saves images of the app's own windows.
+Development switches (environment variables, see `DevHooks.swift`): `MDM_DEV_STORE` and `MDM_SUPPORT_DIR` keep test runs out of your real download list and your browsers' settings, and `MDM_DEV_SNAPSHOT_DIR` saves images of the app's own windows.
 
 ## How this was built
 

@@ -41,6 +41,16 @@ func forward(_ message: CaptureMessage) -> CaptureMessage {
     return .result(accepted: false, error: "App did not start")
 }
 
+/// The version of the extension the app keeps for "Load unpacked"; when it is newer than
+/// the running one, the extension reloads itself from disk.
+func extensionFolderVersion() -> String? {
+    let manifest = CaptureProtocol.supportDirectory.appendingPathComponent("ChromeExtension/manifest.json")
+    guard let data = try? Data(contentsOf: manifest),
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    else { return nil }
+    return json["version"] as? String
+}
+
 while let body = try NativeMessaging.read(from: stdin) {
     guard let message = try? JSONDecoder().decode(CaptureMessage.self, from: body) else {
         reply(.result(accepted: false, error: "Malformed message"))
@@ -48,7 +58,10 @@ while let body = try NativeMessaging.read(from: stdin) {
     }
     switch message.type {
     case "hello":
-        reply(CaptureMessage(type: "rules", rules: CaptureRules.load()))
+        // Tell the app the extension is there (for its setup window), without starting it.
+        _ = try? UnixSocketClient.exchange(CaptureMessage(type: "hello", extensionVersion: message.extensionVersion),
+                                           timeout: 1)
+        reply(CaptureMessage(type: "rules", rules: CaptureRules.load(), extensionVersion: extensionFolderVersion()))
     case "capture":
         if let capture = message.capture, capture.httpURL != nil {
             reply(forward(CaptureMessage(type: "capture", capture: capture)))

@@ -42,6 +42,10 @@ public final class BrowserCapture {
     public private(set) var pending: [PendingCapture] = []
     /// Called for every new capture, so the UI can open its window.
     public var didReceive: ((PendingCapture) -> Void)?
+    /// When the browser extension last talked to the app, and its version (the setup
+    /// window uses this to confirm the extension is installed).
+    public private(set) var extensionLastSeen: Date?
+    public private(set) var extensionVersion: String?
 
     private let settings: AppSettings
     private let tools: VideoTools
@@ -90,11 +94,16 @@ public final class BrowserCapture {
             return await formats(for: media)
         case "downloadMedia":
             return queueMedia(message.media)
+        case "hello":
+            extensionLastSeen = Date()
+            extensionVersion = message.extensionVersion
+            return .result(accepted: true)
         case "capture":
             break
         default:
             return .result(accepted: false, error: "Unknown message type")
         }
+        extensionLastSeen = Date()
         guard let request = message.capture else { return .result(accepted: false, error: "Missing capture") }
         guard settings.captureEnabled else { return .result(accepted: false, error: "Capture is turned off") }
         guard let url = request.httpURL else { return .result(accepted: false, error: "Not an http(s) link") }
@@ -109,8 +118,12 @@ public final class BrowserCapture {
     /// The qualities for a page: first the page itself (YouTube and the other sites
     /// yt-dlp knows), then the stream links the extension saw in its traffic.
     func formats(for media: MediaRequest) async -> CaptureMessage {
-        guard let ytDlp = tools.ytDlp else {
-            return CaptureMessage(type: "formats", error: "yt-dlp is not installed (Options ▸ Video)")
+        // The first video asked for downloads yt-dlp (once); the user doesn't have to.
+        let ytDlp: URL
+        do {
+            ytDlp = try await YtDlpSetup.ensure(tools)
+        } catch {
+            return CaptureMessage(type: "formats", error: "Could not download yt-dlp (\(error)). Try Options ▸ Video.")
         }
         let extractor = MediaExtractor(ytDlp: ytDlp)
         var candidates: [String] = []

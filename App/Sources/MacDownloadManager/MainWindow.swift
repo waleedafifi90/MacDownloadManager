@@ -51,6 +51,7 @@ struct MainWindow: View {
             DevHooks.run(manager: manager)
             if ProcessInfo.processInfo.environment["MDM_DEV_OPEN_SCHEDULER"] != nil { openWindow(id: "scheduler") }
             if ProcessInfo.processInfo.environment["MDM_DEV_OPEN_ABOUT"] != nil { openWindow(id: "about") }
+            if BrowserSetup.shouldShowWelcome(settings: manager.settings) { openWindow(id: "browserSetup") }
             if ProcessInfo.processInfo.environment["MDM_DEV_OPEN_PROPERTIES"] != nil, let first = manager.items.first {
                 panels.showProperties(first)
             }

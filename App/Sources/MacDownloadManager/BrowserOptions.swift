@@ -9,16 +9,10 @@ struct BrowserOptions: View {
     @State private var integration = BrowserIntegration()
     @State private var message: String?
     @State private var refresh = 0
+    @Environment(\.openWindow) private var openWindow
 
-    /// mdm-native-host inside this app bundle (absent when run with `swift run`).
-    private var hostPath: URL? {
-        let url = Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/mdm-native-host")
-        return FileManager.default.isExecutableFile(atPath: url.path) ? url : nil
-    }
-
-    private var bundledExtension: URL? {
-        Bundle.main.url(forResource: "ChromeExtension", withExtension: nil)
-    }
+    private var hostPath: URL? { BrowserSetup.hostPath }
+    private var bundledExtension: URL? { BrowserSetup.bundledExtension }
 
     var body: some View {
         @Bindable var settings = manager.settings
@@ -57,6 +51,7 @@ struct BrowserOptions: View {
                     }
                 }
                 HStack {
+                    Button("Set Up Extension…") { openWindow(id: "browserSetup") }
                     Button("Connect Browsers", action: install).disabled(hostPath == nil || bundledExtension == nil)
                     Button("Show Extension Folder", action: showExtension)
                     Button("Open Chrome Extensions") { openChromeExtensionsPage() }
@@ -66,10 +61,7 @@ struct BrowserOptions: View {
                         .font(.callout).foregroundStyle(.orange)
                 }
                 if let message { Text(message).font(.callout).foregroundStyle(.secondary) }
-                Text("""
-                    After connecting: in Chrome open chrome://extensions, turn on Developer mode, \
-                    choose "Load unpacked" and select the extension folder.
-                    """)
+                Text("The app connects the browsers by itself when it starts. Set Up Extension shows how to add the extension.")
                     .font(.callout).foregroundStyle(.secondary)
             }
         }
@@ -95,10 +87,6 @@ struct BrowserOptions: View {
     }
 
     private func openChromeExtensionsPage() {
-        // chrome:// pages can't be opened as URLs from other apps; ask Chrome directly.
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        process.arguments = ["-a", "Google Chrome", "chrome://extensions"]
-        try? process.run()
+        BrowserSetup.openExtensionsPage(integration.installedBrowsers.first ?? BrowserIntegration.browsers[0])
     }
 }

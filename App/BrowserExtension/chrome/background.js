@@ -17,10 +17,11 @@ function send(message) {
 async function getRules() {
   if (cachedRules && Date.now() - rulesFetchedAt < RULES_MAX_AGE_MS) return cachedRules;
   try {
-    const reply = await send({ type: 'hello' });
+    const reply = await send({ type: 'hello', extensionVersion: chrome.runtime.getManifest().version });
     if (reply?.type === 'rules') {
       cachedRules = reply.rules;
       rulesFetchedAt = Date.now();
+      await reloadIfUpdated(reply.extensionVersion);
     }
   } catch (error) {
     console.warn('Mac Download Manager host is not available:', error.message);
@@ -28,6 +29,24 @@ async function getRules() {
   }
   return cachedRules;
 }
+
+/**
+ * The app keeps the extension folder at its own version. When the folder has a different
+ * version than the one running, reload from disk to pick it up: once per version, so a
+ * copy loaded from another folder doesn't reload over and over.
+ */
+async function reloadIfUpdated(diskVersion) {
+  if (!diskVersion || diskVersion === chrome.runtime.getManifest().version) return;
+  const { reloadedFor } = await chrome.storage.local.get('reloadedFor');
+  if (reloadedFor === diskVersion) return;
+  await chrome.storage.local.set({ reloadedFor: diskVersion });
+  chrome.runtime.reload();
+}
+
+// Say hello when the browser starts or the extension is installed, so the app knows
+// it's connected (its setup window waits for this) and an update is picked up early.
+chrome.runtime.onStartup.addListener(() => getRules());
+chrome.runtime.onInstalled.addListener(() => getRules());
 
 async function isEnabled() {
   const { enabled = true } = await chrome.storage.local.get('enabled');

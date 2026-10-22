@@ -152,9 +152,10 @@ public struct MediaRequest: Codable, Equatable, Sendable {
 }
 
 /// Any message on the wire. `type` says which fields are used:
-/// extension → host: "hello", "capture" (with `capture`)
-/// host → extension: "rules" (with `rules`), "captureResult" (with `accepted`, `error`)
-/// host → app: "capture"; app → host: "captureResult"
+/// extension → host: "hello" (with `extensionVersion`), "capture" (with `capture`)
+/// host → extension: "rules" (with `rules`, and in `extensionVersion` the version in the
+/// extension folder on disk), "captureResult" (with `accepted`, `error`)
+/// host → app: "capture", "hello" (with `extensionVersion`); app → host: "captureResult"
 /// Video: extension → app "listFormats" (with `media`) → "formats" (with `media`, `formats`);
 /// "downloadMedia" (with `media` incl. `option`) → "captureResult".
 public struct CaptureMessage: Codable, Equatable, Sendable {
@@ -165,9 +166,11 @@ public struct CaptureMessage: Codable, Equatable, Sendable {
     public var error: String?
     public var media: MediaRequest?
     public var formats: [MediaOption]?
+    public var extensionVersion: String?
 
     public init(type: String, capture: CaptureRequest? = nil, rules: CaptureRules? = nil,
-                accepted: Bool? = nil, error: String? = nil, media: MediaRequest? = nil, formats: [MediaOption]? = nil) {
+                accepted: Bool? = nil, error: String? = nil, media: MediaRequest? = nil, formats: [MediaOption]? = nil,
+                extensionVersion: String? = nil) {
         self.type = type
         self.capture = capture
         self.rules = rules
@@ -175,6 +178,7 @@ public struct CaptureMessage: Codable, Equatable, Sendable {
         self.error = error
         self.media = media
         self.formats = formats
+        self.extensionVersion = extensionVersion
     }
 
     public static func result(accepted: Bool, error: String? = nil) -> CaptureMessage {

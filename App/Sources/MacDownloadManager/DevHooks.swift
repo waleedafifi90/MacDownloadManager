@@ -6,6 +6,7 @@ import DownloadsCore
 /// - MDM_DEV_ADD_URL + MDM_DEV_SAVE_DIR: start downloading that URL at launch.
 /// - MDM_DEV_OPEN_SCHEDULER: open the Scheduler window at launch.
 /// - MDM_DEV_OPEN_ABOUT: open the About window at launch.
+/// - MDM_DEV_OPEN_BROWSER_SETUP: open the browser extension setup window at launch.
 /// - MDM_DEV_OPEN_PROPERTIES: open File Properties for the first download at launch.
 /// - MDM_DEV_UPDATE_API=<url>: check this "latest release" JSON at launch instead of GitHub;
 ///   with MDM_DEV_AUTO_INSTALL_UPDATE also install what it finds (see MacDownloadManagerApp).
