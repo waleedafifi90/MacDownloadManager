@@ -50,7 +50,7 @@ Not affiliated with, endorsed by, or containing any code or assets of IDM or Ton
 
 ## Download
 
-Get **MacDownloadManager-0.1.3.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
+Get **MacDownloadManager-0.1.4.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
 
 1. Open the DMG and drag **MacDownloadManager** to **Applications**.
 2. Open it once. macOS says it can't verify the developer, because the app isn't signed with an Apple Developer ID or notarized (that needs a paid Apple developer account).
@@ -58,7 +58,7 @@ Get **MacDownloadManager-0.1.3.dmg** from the [latest release](https://github.co
 
 Or, in Terminal: `xattr -dr com.apple.quarantine /Applications/MacDownloadManager.app`
 
-The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.1.3.dmg`.
+The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.1.4.dmg`.
 
 ## Requirements
 
@@ -76,7 +76,7 @@ cd MacDownloadManager/App
 open build/MacDownloadManager.app
 ```
 
-`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.1.3` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.1.3.dmg` with its SHA-256.
+`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.1.4` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.1.4.dmg` with its SHA-256.
 
 The download engine also has a command-line tool:
 
@@ -109,7 +109,7 @@ For each release:
 echo 0.1.2 > App/VERSION
 App/make-dmg.sh 0.1.2        # universal DMG + .sha256 + .sig (signed with the key)
 git commit -am "Version 0.1.2" && git tag -a v0.1.2 -m "0.1.2" && git push origin main v0.1.2
-gh release create v0.1.2 App/build/MacDownloadManager-0.1.3.dmg* --title "Mac Download Manager 0.1.2" --notes "..."
+gh release create v0.1.2 App/build/MacDownloadManager-0.1.4.dmg* --title "Mac Download Manager 0.1.2" --notes "..."
 ```
 
 The DMG's `.sig` file must be attached to the release: installed copies refuse updates without a valid signature. Copies older than 0.1.2 have no updater and need one manual update.
@@ -160,6 +160,15 @@ Development switches (environment variables, see `DevHooks.swift`): `MDM_DEV_STO
 The behavior was studied from IDM 6.43 build 15 (download segmentation, retries, browser capture, the layout of its windows) and written up in [`specs/`](specs/). The code here is written from scratch from those notes. IDM's own files (its programs, decompiled code, browser extension and texts) are not part of this repository, and none of its code, icons or images are used.
 
 Downloading from YouTube is against YouTube's Terms of Service except where YouTube allows it; you are responsible for what you download. The app does not get around DRM.
+
+## Author
+
+**Waleed A. Afifi**
+
+- Email: [waleedafifi.blog@gmail.com](mailto:waleedafifi.blog@gmail.com)
+- GitHub: [@waleedafifi90](https://github.com/waleedafifi90) — follow for updates
+
+Found a bug or have an idea? [Open an issue](https://github.com/waleedafifi90/MacDownloadManager/issues). If you find the app useful, a ⭐ on the repository helps.
 
 ## License
 

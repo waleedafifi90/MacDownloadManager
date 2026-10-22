@@ -84,7 +84,8 @@ struct MacDownloadManagerApp: App {
         }
         .commands {
             AppCommands(manager: manager, ui: ui, queues: queues)
-            CommandGroup(after: .appInfo) {
+            CommandGroup(replacing: .appInfo) {
+                AboutMenuButton()
                 Button("Check for Updates…") { checkForUpdates() }
             }
         }
@@ -102,6 +103,12 @@ struct MacDownloadManagerApp: App {
         } label: {
             MenuBarLabel().environment(manager)
         }
+
+        Window("About Mac Download Manager", id: "about") {
+            AboutWindow()
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
 
         Settings {
             OptionsView().environment(manager).environment(capture).environment(updater)

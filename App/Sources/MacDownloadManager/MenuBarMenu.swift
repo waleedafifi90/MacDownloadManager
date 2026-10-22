@@ -32,6 +32,7 @@ struct MenuBarMenu: View {
         Divider()
         Button("Open Mac Download Manager") { AppLifecycle.shared.showMainWindow() }
         Button("Check for Updates…", action: checkForUpdates)
+        AboutMenuButton()
         Button("Quit") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }
