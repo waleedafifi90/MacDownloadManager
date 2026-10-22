@@ -197,3 +197,23 @@ struct UpdateReleaseTests {
         }
     }
 }
+
+/// Checks the release actually published on GitHub; run with MDM_NETWORK_TESTS=1.
+@MainActor @Suite(.enabled(if: ProcessInfo.processInfo.environment["MDM_NETWORK_TESTS"] == "1"))
+struct PublishedReleaseTests {
+    @Test func latestReleaseIsOfferedAndPassesVerification() async throws {
+        let settings = AppSettings(defaults: UserDefaults(suiteName: "mdm-tests-\(UUID().uuidString)")!)
+        let updater = AppUpdater(settings: settings, current: AppVersion("0.0.1"))
+        await updater.check(userInitiated: true)
+        guard case .available(let release) = updater.state else {
+            Issue.record("Expected an update, got \(updater.state)")
+            return
+        }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("mdm-live-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: folder) }
+        // Downloads the DMG and its .sig, and checks GitHub's SHA-256 and our signature.
+        let dmg = try await updater.download(release, to: folder)
+        #expect(FileManager.default.fileExists(atPath: dmg.path))
+        print("Latest release \(release.version) verified: \(release.dmgURL.lastPathComponent)")
+    }
+}
