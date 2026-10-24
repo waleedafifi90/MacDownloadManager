@@ -157,7 +157,14 @@ struct FileInfoStep: View {
         }
         .padding(20)
         .frame(width: 560)
-        .task { await probe() }
+        .task {
+            await probe()
+            // Development aid for demo recordings (see DevHooks).
+            if let delay = ProcessInfo.processInfo.environment["MDM_DEV_AUTO_START"].flatMap(Double.init) {
+                try? await Task.sleep(for: .seconds(delay))
+                add(startNow: true)
+            }
+        }
     }
 
     private func probe() async {

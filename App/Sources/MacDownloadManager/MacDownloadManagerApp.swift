@@ -27,7 +27,9 @@ struct MacDownloadManagerApp: App {
         // MDM_DEV_STORE keeps development runs (see DevHooks) out of the real download list.
         let store = ProcessInfo.processInfo.environment["MDM_DEV_STORE"].map { URL(fileURLWithPath: $0) }
             ?? DownloadManager.defaultStoreURL
-        let manager = DownloadManager(storeURL: store)
+        let settings = ProcessInfo.processInfo.environment["MDM_DEV_DEFAULTS"]
+            .flatMap(UserDefaults.init(suiteName:)).map(AppSettings.init(defaults:)) ?? AppSettings()
+        let manager = DownloadManager(storeURL: store, settings: settings)
         _manager = State(initialValue: manager)
         let queues = QueueManager(manager: manager, storeURL: QueueManager.storeURL(nextTo: store))
         _queues = State(initialValue: queues)
