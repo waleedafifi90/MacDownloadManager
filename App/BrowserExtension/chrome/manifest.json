@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Mac Download Manager",
   "description": "Sends your downloads to Mac Download Manager for faster, resumable downloading.",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAk9x0g2j+/y3Y1wwzPsNq9S+EvEmc5T+1Yvna9xhll4r41xIwt3viYogm28M7FC8M4O1LiT2OhSn0ZRh64pAfp504xeXE9pygQM3s/Bco7KDUsT3zWefcrrUZK8pwaGC1jCIxr0KzW1UPRfbiJ3dZ6h9WqkfPHPEdMUFHJu2agCfxej+vcpc3dCxEYQ28oX93Q96jEMl6Z2fb8AA7n5mV/c3wNovahcBNz27hhbBJ41aaN/+V6O//tcRgNkWUlb7prR6d1vlBkeKCUI30o9CvZKowF8x+MzjkEPBcAZjc3e3Q4I16v+9wjRwm2d32ojbvM26RBDTt9tj5Z93qlbluNQIDAQAB",
   "minimum_chrome_version": "116",
   "background": {

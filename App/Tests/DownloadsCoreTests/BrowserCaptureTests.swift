@@ -119,6 +119,13 @@ import Testing
         let bad = try await exchange(CaptureMessage(type: "capture", capture: CaptureRequest(url: "javascript:alert(1)")))
         #expect(bad?.accepted == false)
 
+        // Qualities looked up ahead of time never start the app; with the app gone the
+        // host answers right away instead of opening it.
+        capture.stop()
+        let media = MediaRequest(pageUrl: "https://example.com/watch", title: "x")
+        let early = try await exchange(CaptureMessage(type: "listFormats", media: media, startApp: false))
+        #expect(early?.error == CaptureMessage.appNotRunning)
+
         // Chrome closing the pipe ends the host.
         try input.fileHandleForWriting.close()
         let ended = try await Task.detached { host.waitUntilExit(); return host.terminationStatus }.value

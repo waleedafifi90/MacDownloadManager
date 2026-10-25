@@ -167,10 +167,13 @@ public struct CaptureMessage: Codable, Equatable, Sendable {
     public var media: MediaRequest?
     public var formats: [MediaOption]?
     public var extensionVersion: String?
+    /// extension → host: false when the app shouldn't be started for this message (the
+    /// qualities looked up ahead of time while the pointer is over a player).
+    public var startApp: Bool?
 
     public init(type: String, capture: CaptureRequest? = nil, rules: CaptureRules? = nil,
                 accepted: Bool? = nil, error: String? = nil, media: MediaRequest? = nil, formats: [MediaOption]? = nil,
-                extensionVersion: String? = nil) {
+                extensionVersion: String? = nil, startApp: Bool? = nil) {
         self.type = type
         self.capture = capture
         self.rules = rules
@@ -179,7 +182,11 @@ public struct CaptureMessage: Codable, Equatable, Sendable {
         self.media = media
         self.formats = formats
         self.extensionVersion = extensionVersion
+        self.startApp = startApp
     }
+
+    /// The host's answer when the app isn't running and wasn't started.
+    public static let appNotRunning = "App not running"
 
     public static func result(accepted: Bool, error: String? = nil) -> CaptureMessage {
         CaptureMessage(type: "captureResult", accepted: accepted, error: error)

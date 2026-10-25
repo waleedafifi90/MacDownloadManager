@@ -147,7 +147,7 @@ chrome.tabs.onRemoved.addListener((tabId) => chrome.storage.session.remove(`medi
 const formatsCache = new Map();
 const FORMATS_MAX_AGE_MS = 10 * 60_000;
 
-async function listFormats(tabId, pageUrl, title) {
+async function listFormats(tabId, pageUrl, title, startApp) {
   const cached = formatsCache.get(pageUrl);
   if (cached && Date.now() - cached.at < FORMATS_MAX_AGE_MS) return cached.reply;
   if (cached?.pending) return cached.pending;
@@ -164,7 +164,7 @@ async function listFormats(tabId, pageUrl, title) {
       userAgent: navigator.userAgent,
     };
     try {
-      const reply = await send({ type: 'listFormats', media });
+      const reply = await send({ type: 'listFormats', media, startApp });
       if (reply?.formats?.length) formatsCache.set(pageUrl, { at: Date.now(), reply });
       else formatsCache.delete(pageUrl);
       return reply;
@@ -180,7 +180,7 @@ async function listFormats(tabId, pageUrl, title) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const tabId = sender.tab?.id ?? -1;
   if (message?.type === 'listFormats' && typeof message.pageUrl === 'string') {
-    listFormats(tabId, message.pageUrl, message.title).then(sendResponse);
+    listFormats(tabId, message.pageUrl, message.title, message.startApp === true).then(sendResponse);
     return true;
   }
   if (message?.type === 'downloadMedia' && message.media?.option) {

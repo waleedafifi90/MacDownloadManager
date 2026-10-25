@@ -23,7 +23,8 @@ struct MacDownloadManagerApp: App {
         // Window sizes and positions are still remembered (NSWindow Frame defaults).
         UserDefaults.standard.register(defaults: ["ApplePersistenceIgnoreState": true])
         // Also show a Dock icon and menu bar when launched as a bare executable (swift run).
-        NSApplication.shared.setActivationPolicy(.regular)
+        // A background start (by the browser helper) stays in the menu bar.
+        NSApplication.shared.setActivationPolicy(AppLifecycle.launchedInBackground ? .accessory : .regular)
         // MDM_DEV_STORE keeps development runs (see DevHooks) out of the real download list.
         let store = ProcessInfo.processInfo.environment["MDM_DEV_STORE"].map { URL(fileURLWithPath: $0) }
             ?? DownloadManager.defaultStoreURL

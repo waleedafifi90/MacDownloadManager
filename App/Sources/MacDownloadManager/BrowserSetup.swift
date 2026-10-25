@@ -33,7 +33,9 @@ enum BrowserSetup {
     static func shouldShowWelcome(settings: AppSettings) -> Bool {
         let env = ProcessInfo.processInfo.environment
         if env["MDM_DEV_OPEN_BROWSER_SETUP"] != nil { return true }
-        guard env["MDM_SUPPORT_DIR"] == nil, hostPath != nil, !settings.browserSetupShown else { return false }
+        guard env["MDM_SUPPORT_DIR"] == nil, hostPath != nil, !settings.browserSetupShown,
+            !AppLifecycle.launchedInBackground
+        else { return false }
         settings.browserSetupShown = true
         let integration = BrowserIntegration()
         return !integration.installedBrowsers.contains(where: integration.hasExtension)

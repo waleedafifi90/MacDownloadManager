@@ -1,3 +1,4 @@
+import AppKit
 import CaptureProtocol
 import Foundation
 
@@ -20,18 +21,35 @@ func appBundle() -> URL? {
     return bundle.pathExtension == "app" ? bundle : nil
 }
 
-/// Sends a message to the app, starting it and waiting up to 15s if needed. Listing a
-/// video's qualities runs yt-dlp, which can take a while.
-func forward(_ message: CaptureMessage) -> CaptureMessage {
-    let timeout: TimeInterval = message.type == "listFormats" ? 120 : 15
-    if let answer = try? UnixSocketClient.exchange(message, timeout: timeout) { return answer }
+/// Whether a copy of the app is running (it may still be starting and not listening yet).
+func appIsRunning() -> Bool {
+    guard let bundle = appBundle(), let id = Bundle(url: bundle)?.bundleIdentifier else { return false }
+    return !NSRunningApplication.runningApplications(withBundleIdentifier: id).isEmpty
+}
 
-    guard let bundle = appBundle() else { return .result(accepted: false, error: "App not running") }
-    let open = Process()
-    open.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-    open.arguments = [bundle.path]
-    try? open.run()
-    open.waitUntilExit()
+/// Sends a message to the app. Listing a video's qualities runs yt-dlp, which can take a
+/// while. If the app isn't running it is started in the background (menu bar only, no
+/// window) unless `startApp` is false, and we wait up to 15s for it. A running app that is
+/// slow to answer is never "opened" again: for macOS that is the user reopening the app,
+/// and it brings up the main window in front of whatever the user is doing.
+func forward(_ message: CaptureMessage, startApp: Bool = true) -> CaptureMessage {
+    let timeout: TimeInterval = message.type == "listFormats" ? 120 : 15
+    do {
+        return try UnixSocketClient.exchange(message, timeout: timeout)
+    } catch CaptureError.connectFailed {
+        // Nothing is listening: the app isn't running, or is still starting.
+    } catch {
+        return .result(accepted: false, error: "Mac Download Manager didn't answer in time")
+    }
+    guard startApp else { return .result(accepted: false, error: CaptureMessage.appNotRunning) }
+    if !appIsRunning() {
+        guard let bundle = appBundle() else { return .result(accepted: false, error: CaptureMessage.appNotRunning) }
+        let open = Process()
+        open.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        open.arguments = ["-g", "-j", bundle.path, "--args", "--background"]
+        try? open.run()
+        open.waitUntilExit()
+    }
 
     let deadline = Date().addingTimeInterval(15)
     while Date() < deadline {
@@ -70,7 +88,7 @@ while let body = try NativeMessaging.read(from: stdin) {
         }
     case "listFormats", "downloadMedia":
         if let media = message.media, CaptureRequest(url: media.pageUrl).httpURL != nil {
-            reply(forward(CaptureMessage(type: message.type, media: media)))
+            reply(forward(CaptureMessage(type: message.type, media: media), startApp: message.startApp ?? true))
         } else {
             reply(.result(accepted: false, error: "Not an http(s) page"))
         }

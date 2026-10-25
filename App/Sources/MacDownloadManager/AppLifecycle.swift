@@ -18,6 +18,18 @@ final class AppLifecycle: NSObject, NSApplicationDelegate {
     /// Opens the main window scene; set by the main window once SwiftUI provides it.
     var openMainWindow: (() -> Void)?
 
+    /// Started by the browser helper (`--background`) to take a download: stay in the
+    /// menu bar without showing the main window.
+    static let launchedInBackground = CommandLine.arguments.contains("--background")
+    private var hideMainWindowAtLaunch = launchedInBackground
+
+    /// Called when the main window first appears; closes it after a background launch.
+    func mainWindowDidAppear() {
+        guard hideMainWindowAtLaunch else { return }
+        hideMainWindowAtLaunch = false
+        DispatchQueue.main.async { NSApp.windows.first(where: Self.isMainWindow)?.close() }
+    }
+
     // MARK: - App delegate
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -75,6 +87,8 @@ final class AppLifecycle: NSObject, NSApplicationDelegate {
                 .first(where: { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }),
             let url = other.bundleURL
         else { return false }
+        // The browser helper only needs a running copy; don't bring up its window.
+        if launchedInBackground { return true }
         // Opening a running app sends it a "reopen", which shows its main window.
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
         return true

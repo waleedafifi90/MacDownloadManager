@@ -116,11 +116,13 @@
     }, HIDE_DELAY_MS);
   }
 
-  function listing() {
+  // Looked up ahead of time when the pointer is over a player, without starting the app
+  // (startApp false); opening the menu starts it if it isn't running.
+  function listing(startApp = false) {
     const pageUrl = location.href;
     if (!listings.has(pageUrl)) {
       const request = chrome.runtime
-        .sendMessage({ type: 'listFormats', pageUrl, title: document.title })
+        .sendMessage({ type: 'listFormats', pageUrl, title: document.title, startApp })
         .catch((error) => ({ error: error.message }));
       listings.set(pageUrl, request);
       // Don't keep failures: the app may be installed or started later.
@@ -146,7 +148,8 @@
     menuOpen = true;
     menu.classList.add('open');
     menu.replaceChildren(note('Finding qualities…'));
-    const reply = await listing();
+    let reply = await listing(true);
+    if (reply?.error === 'App not running') reply = await listing(true);
     if (!menuOpen) return;
     if (!reply?.formats?.length) {
       menu.replaceChildren(note(reply?.error || 'No downloadable video found on this page.', 'error'));
