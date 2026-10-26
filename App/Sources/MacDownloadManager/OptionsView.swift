@@ -95,6 +95,12 @@ private struct DownloadsOptions: View {
             Text("Hidden and minimized downloads keep running; bring their window back from the menu bar icon. Downloads started by a queue always start minimized.")
                 .font(.callout).foregroundStyle(.secondary)
             Toggle("Show download complete dialog", isOn: $settings.showCompleteDialog)
+            Section {
+                Toggle("Keep the Mac awake while downloading", isOn: $settings.keepAwakeWhileDownloading)
+                    .onChange(of: settings.keepAwakeWhileDownloading) { manager.updateSleepPrevention() }
+                Text("The screen still turns off and locks as usual, and downloads go on in the background. Closing a laptop's lid still puts it to sleep; downloads continue when it wakes.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
     }

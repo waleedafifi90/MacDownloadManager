@@ -28,6 +28,7 @@ Not affiliated with, endorsed by, or containing any code or assets of IDM or Ton
 - Queues and Scheduler: files in order, *N* at the same time, start once or daily on chosen weekdays, stop at a time, retries per file, and when done: open a file, quit, sleep or shut down (with a 30-second countdown and Cancel).
 - Dialogs appear over the browser, also in full screen, without switching Spaces.
 - Closing the window keeps the app running in the menu bar; opening it again brings back the same copy.
+- Downloads keep the Mac from going to sleep on its own while the screen turns off as usual, and continue after it wakes.
 
 **Updates, without a server**
 - The app checks the project's GitHub releases (daily, or **Check for Updates…**), shows the release notes, and installs the new version in place: it pauses running downloads, swaps the app and relaunches, and the downloads continue.
@@ -50,7 +51,7 @@ Not affiliated with, endorsed by, or containing any code or assets of IDM or Ton
 
 ## Download
 
-Get **MacDownloadManager-0.1.9.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
+Get **MacDownloadManager-0.2.0.dmg** from the [latest release](https://github.com/waleedafifi90/MacDownloadManager/releases/latest). It runs on Apple silicon and Intel Macs with macOS 15 or later.
 
 1. Open the DMG and drag **MacDownloadManager** to **Applications**.
 2. Open it once. macOS says it can't verify the developer, because the app isn't signed with an Apple Developer ID or notarized (that needs a paid Apple developer account).
@@ -58,7 +59,7 @@ Get **MacDownloadManager-0.1.9.dmg** from the [latest release](https://github.co
 
 Or, in Terminal: `xattr -dr com.apple.quarantine /Applications/MacDownloadManager.app`
 
-The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.1.9.dmg`.
+The release page lists the DMG's SHA-256 so you can check your download: `shasum -a 256 MacDownloadManager-0.2.0.dmg`.
 
 ## Requirements
 
@@ -76,7 +77,7 @@ cd MacDownloadManager/App
 open build/MacDownloadManager.app
 ```
 
-`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.1.9` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.1.9.dmg` with its SHA-256.
+`make-app.sh` builds a release binary and wraps it in `build/MacDownloadManager.app` together with the native messaging host and the Chrome extension, then signs it ad hoc for local use. `./make-dmg.sh 0.2.0` builds a universal (Apple silicon + Intel) app and packs it into `build/MacDownloadManager-0.2.0.dmg` with its SHA-256.
 
 The download engine also has a command-line tool:
 

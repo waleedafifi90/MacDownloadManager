@@ -54,6 +54,11 @@ public final class AppSettings {
     public var skippedUpdateVersion: String? {
         didSet { defaults.set(skippedUpdateVersion, forKey: "skippedUpdateVersion") }
     }
+    /// Keep the Mac from going to sleep on its own while something downloads; the
+    /// screen still turns off as usual.
+    public var keepAwakeWhileDownloading: Bool {
+        didSet { defaults.set(keepAwakeWhileDownloading, forKey: "keepAwakeWhileDownloading") }
+    }
     /// The browser extension setup window was shown once at first launch.
     public var browserSetupShown: Bool { didSet { defaults.set(browserSetupShown, forKey: "browserSetupShown") } }
     /// Downloads paused to install an update, resumed when the new version starts.
@@ -87,6 +92,7 @@ public final class AppSettings {
         skippedUpdateVersion = defaults.string(forKey: "skippedUpdateVersion")
         resumeAfterUpdate = defaults.stringArray(forKey: "resumeAfterUpdate") ?? []
         browserSetupShown = defaults.bool(forKey: "browserSetupShown")
+        keepAwakeWhileDownloading = defaults.object(forKey: "keepAwakeWhileDownloading") as? Bool ?? true
     }
 
     /// Like IDM: each category saves into its own subfolder of the default folder

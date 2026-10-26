@@ -23,6 +23,12 @@ public final class DownloadManager {
     private let globalLimiter = SpeedLimiter()
     private let storeURL: URL?
     private var lastSave = Date.distantPast
+    /// Held while downloads run, so the Mac doesn't fall asleep in the middle of one.
+    private var keepAwake: NSObjectProtocol?
+    /// Downloads that were running when the Mac went to sleep, and how long after waking
+    /// a failure among them is taken for the network not being back yet.
+    private var runningBeforeSleep: Set<UUID> = []
+    private var recoverUntil = Date.distantPast
 
     public static var defaultStoreURL: URL {
         URL.applicationSupportDirectory
@@ -82,6 +88,7 @@ public final class DownloadManager {
         item.resetRate()
         item.task?.cancel()
         save()
+        updateSleepPrevention()
     }
 
     public func resume(_ item: DownloadItem) {
@@ -126,6 +133,7 @@ public final class DownloadManager {
         }
         if deleteFile { try? fm.removeItem(at: item.destination) }
         save()
+        updateSleepPrevention()
     }
 
     /// Removes finished downloads from the list; the files stay.
@@ -202,11 +210,54 @@ public final class DownloadManager {
             item.resetRate()
             item.task = nil
             self?.save()
+            self?.updateSleepPrevention()
+            if case .failed = outcome { self?.recoverAfterWake(item) }
             if outcome == .completed { self?.didComplete?(item) }
             self?.runEnded?(item)
         }
         save()
+        updateSleepPrevention()
         didStart?(item)
+    }
+
+    // MARK: - Sleep
+
+    /// While anything downloads, the Mac doesn't go to sleep on its own (like a video
+    /// call does); the screen still turns off when idle, and closing a laptop's lid still
+    /// puts it to sleep. Holding the activity also keeps App Nap from slowing the
+    /// downloads when the app is in the background.
+    public func updateSleepPrevention() {
+        let needed = settings.keepAwakeWhileDownloading && items.contains { $0.status == .downloading }
+        if needed, keepAwake == nil {
+            keepAwake = ProcessInfo.processInfo.beginActivity(options: .userInitiated, reason: "Downloading files")
+        } else if !needed, let activity = keepAwake {
+            ProcessInfo.processInfo.endActivity(activity)
+            keepAwake = nil
+        }
+    }
+
+    public var isKeepingMacAwake: Bool { keepAwake != nil }
+
+    /// The Mac is going to sleep anyway (lid closed, Apple menu ▸ Sleep).
+    public func systemWillSleep() {
+        runningBeforeSleep = Set(items.filter { $0.status == .downloading }.map(\.id))
+    }
+
+    /// After waking, downloads carry on by themselves; one that failed because the network
+    /// wasn't back yet is started again.
+    public func systemDidWake() {
+        recoverUntil = Date().addingTimeInterval(120)
+        for item in items where runningBeforeSleep.contains(item.id) {
+            if case .failed = item.status { recoverAfterWake(item) }
+        }
+    }
+
+    private func recoverAfterWake(_ item: DownloadItem) {
+        guard Date() < recoverUntil, runningBeforeSleep.remove(item.id) != nil else { return }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            if case .failed = item.status { self?.resume(item) }
+        }
     }
 
     static func describe(_ error: Error) -> String {

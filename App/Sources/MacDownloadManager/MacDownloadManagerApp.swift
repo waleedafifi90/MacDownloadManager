@@ -74,6 +74,15 @@ struct MacDownloadManagerApp: App {
                 }
             }
         }
+        // Downloads keep the Mac awake (DownloadManager.updateSleepPrevention); when it
+        // sleeps anyway, they pick up again after it wakes.
+        let workspace = NSWorkspace.shared.notificationCenter
+        workspace.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { manager.systemWillSleep() }
+        }
+        workspace.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { manager.systemDidWake() }
+        }
         queues.startQueuesOnLaunch()
         // The schedules are checked every 15 seconds while the app runs.
         Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in

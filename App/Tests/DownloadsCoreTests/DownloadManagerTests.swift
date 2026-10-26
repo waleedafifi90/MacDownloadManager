@@ -238,6 +238,48 @@ import Testing
         #expect(reloaded?.referrer == "https://example.com/page")
     }
 
+    @Test func keepsTheMacAwakeOnlyWhileDownloading() async throws {
+        let body = Self.randomData(2_000_000)
+        let server = try TestServer(body: body, chunkSize: 8 * 1024, chunkDelay: 0.05)
+        defer { server.stop() }
+        let manager = slowManager()
+        #expect(!manager.isKeepingMacAwake)
+
+        let item = manager.add(url: server.url, to: folder)
+        #expect(manager.isKeepingMacAwake)
+        manager.settings.keepAwakeWhileDownloading = false
+        manager.updateSleepPrevention()
+        #expect(!manager.isKeepingMacAwake)
+        manager.settings.keepAwakeWhileDownloading = true
+        manager.updateSleepPrevention()
+        #expect(manager.isKeepingMacAwake)
+
+        manager.pause(item)
+        #expect(!manager.isKeepingMacAwake)
+        manager.resume(item)
+        try await waitUntil { item.status == .completed }
+        #expect(!manager.isKeepingMacAwake)
+    }
+
+    @Test func aDownloadThatFailsAfterSleepIsStartedAgain() async throws {
+        let manager = makeManager()
+        manager.engineOptions.maxRetries = 0
+        // Nothing listens there: the run fails at once, like with the network still down.
+        let item = manager.add(url: URL(string: "http://127.0.0.1:9/file.bin")!, to: folder)
+        manager.systemWillSleep()
+        manager.systemDidWake()
+        try await waitUntil { if case .failed = item.status { true } else { false } }
+        let firstTry = item.lastTry
+
+        try await waitUntil(timeout: 15) { item.lastTry != firstTry }
+        #expect(item.lastTry != firstTry)
+        // Only once: the next failure stays.
+        try await waitUntil { if case .failed = item.status { true } else { false } }
+        let secondTry = item.lastTry
+        try await Task.sleep(for: .seconds(6))
+        #expect(item.lastTry == secondTry)
+    }
+
     @Test func completionHookFires() async throws {
         let server = try TestServer(body: Self.randomData(1000))
         defer { server.stop() }
