@@ -46,7 +46,8 @@ func forward(_ message: CaptureMessage, startApp: Bool = true) -> CaptureMessage
         guard let bundle = appBundle() else { return .result(accepted: false, error: CaptureMessage.appNotRunning) }
         let open = Process()
         open.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        open.arguments = ["-g", "-j", bundle.path, "--args", "--background"]
+        // Not hidden (-j): a hidden app's dialogs wouldn't show either.
+        open.arguments = ["-g", bundle.path, "--args", "--background"]
         try? open.run()
         open.waitUntilExit()
     }

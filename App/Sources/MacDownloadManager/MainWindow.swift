@@ -35,21 +35,7 @@ struct MainWindow: View {
         }
         .sheet(isPresented: $ui.showingAddURL) { AddDownloadFlow() }
         .onAppear {
-            manager.didStart = { [manager, panels, queues] item in
-                // Like IDM: queue downloads always start minimized; otherwise the "Start view" setting.
-                let fromQueue = queues.queue(of: item).map { queues.running.contains($0.id) } ?? false
-                if manager.settings.progressStartView == .normal && !fromQueue { panels.showProgress(item) }
-            }
-            manager.didComplete = { [manager, panels] item in
-                if manager.settings.showCompleteDialog { panels.showComplete(item) }
-            }
-            // Panels show over the browser without activating the app or switching Spaces.
-            capture.didReceive = { [panels] pending in panels.showCapture(pending) }
-            // Captures that arrived before this window existed.
-            for pending in capture.pending { panels.showCapture(pending) }
             AppLifecycle.shared.openMainWindow = { openWindow(id: "main") }
-            AppLifecycle.shared.mainWindowDidAppear()
-            DevHooks.run(manager: manager)
             if ProcessInfo.processInfo.environment["MDM_DEV_OPEN_SCHEDULER"] != nil { openWindow(id: "scheduler") }
             if ProcessInfo.processInfo.environment["MDM_DEV_OPEN_ABOUT"] != nil { openWindow(id: "about") }
             if BrowserSetup.shouldShowWelcome(settings: manager.settings) { openWindow(id: "browserSetup") }

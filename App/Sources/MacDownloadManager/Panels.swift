@@ -116,6 +116,8 @@ final class DialogPanel: NSPanel {
         hidesOnDeactivate = false
         becomesKeyOnlyIfNeeded = false
         level = floating ? .floating : .normal
+        // Stay up when the app is hidden (⌘H): a capture must show wherever the user is.
+        canHide = false
         // On every Space, including a full-screen app's, so it shows wherever the user is.
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
     }

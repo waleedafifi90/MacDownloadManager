@@ -47,13 +47,18 @@ struct MenuBarMenu: View {
 /// The icon itself: filled while something downloads, with the number of running downloads.
 struct MenuBarLabel: View {
     @Environment(DownloadManager.self) private var manager
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         let count = manager.items.filter { $0.status == .downloading }.count
-        if count > 0 {
-            Label("\(count)", systemImage: "arrow.down.circle.fill").labelStyle(.titleAndIcon)
-        } else {
-            Image(systemName: "arrow.down.circle")
+        Group {
+            if count > 0 {
+                Label("\(count)", systemImage: "arrow.down.circle.fill").labelStyle(.titleAndIcon)
+            } else {
+                Image(systemName: "arrow.down.circle")
+            }
         }
+        // The only view that exists after a background start, when no window has opened.
+        .onAppear { AppLifecycle.shared.openMainWindow = { openWindow(id: "main") } }
     }
 }

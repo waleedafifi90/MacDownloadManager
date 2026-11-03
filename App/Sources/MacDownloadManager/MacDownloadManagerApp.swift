@@ -50,6 +50,19 @@ struct MacDownloadManagerApp: App {
         let panels = Panels(manager: manager, capture: capture, queues: queues)
         _panels = State(initialValue: panels)
         queues.didFinishQueue = { [panels] queue in QueueFinish.perform(queue, panels: panels) }
+        // The dialogs must work with no main window: closed, or never opened (background start).
+        manager.didStart = { [manager, panels, queues] item in
+            // Like IDM: queue downloads always start minimized; otherwise the "Start view" setting.
+            let fromQueue = queues.queue(of: item).map { queues.running.contains($0.id) } ?? false
+            if manager.settings.progressStartView == .normal && !fromQueue { panels.showProgress(item) }
+        }
+        manager.didComplete = { [manager, panels] item in
+            if manager.settings.showCompleteDialog { panels.showComplete(item) }
+        }
+        // Panels show over the browser without activating the app or switching Spaces.
+        capture.didReceive = { [panels] pending in panels.showCapture(pending) }
+        // Captures that arrived while this was being set up.
+        for pending in capture.pending { panels.showCapture(pending) }
 
         // Updates come from the project's GitHub releases; checked shortly after launch and
         // then every few hours (at most once a day, see AppUpdater.checkIfDue).
@@ -83,6 +96,7 @@ struct MacDownloadManagerApp: App {
         workspace.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { manager.systemDidWake() }
         }
+        DispatchQueue.main.async { DevHooks.run(manager: manager) }
         queues.startQueuesOnLaunch()
         // The schedules are checked every 15 seconds while the app runs.
         Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
@@ -99,6 +113,8 @@ struct MacDownloadManagerApp: App {
                 .environment(queues)
                 .frame(minWidth: 820, minHeight: 420)
         }
+        // A background start (by the browser helper) stays in the menu bar.
+        .defaultLaunchBehavior(AppLifecycle.launchedInBackground ? .suppressed : .automatic)
         .commands {
             AppCommands(manager: manager, ui: ui, queues: queues)
             CommandGroup(replacing: .appInfo) {
